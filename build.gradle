@@ -74,16 +74,20 @@ tasks {
     }
 }
 
+// Only produce the fat JAR (shadow); skip the thin jar so the right file is deployed
+tasks.named('jar') {
+    enabled = false
+}
+
 shadowJar {
     archiveClassifier.set('')
     manifest {
         attributes('paperweight-mappings-namespace': 'mojang')
     }
 
-    // Relocate all shaded dependencies
+    // Relocate all shaded dependencies (CommandAPI not relocated so plugin code can load it)
     relocate 'de.exlll.configlib', 'me.typical.lib.configlib'
     relocate 'com.tcoded.folialib', 'me.typical.lib.folialib'
-    relocate 'dev.jorel.commandapi', 'me.typical.lib.commandapi'
 }
 
 def targetJavaVersion = 21
