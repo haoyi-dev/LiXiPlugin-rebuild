@@ -1,6 +1,5 @@
 package me.typical.lixiplugin.commands;
 
-import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
@@ -26,14 +25,12 @@ public class CommandHandler implements IService {
     @Override
     public void setup() {
         registerCommands();
-        CommandAPI.onEnable();
         MessageUtil.info("Commands registered successfully");
     }
 
     @Override
     public void shutdown() {
-        // CommandAPI handles unregistration
-        CommandAPI.onDisable();
+        // CommandAPI unregistration is handled in LXPlugin.onDisable()
     }
 
     private void registerCommands() {

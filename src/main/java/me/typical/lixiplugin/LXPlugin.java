@@ -2,7 +2,7 @@ package me.typical.lixiplugin;
 
 import com.tcoded.folialib.FoliaLib;
 import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIPaperConfig;
+import dev.jorel.commandapi.CommandAPISpigotConfig;
 import lombok.Getter;
 import me.typical.lixiplugin.commands.AdminCommandHandler;
 import me.typical.lixiplugin.commands.CommandHandler;
@@ -42,12 +42,15 @@ public final class LXPlugin extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        CommandAPI.onLoad(new CommandAPIPaperConfig(this));
+        CommandAPI.onLoad(new CommandAPISpigotConfig(this));
     }
 
     @Override
     public void onEnable() {
         instance = this;
+
+        // CommandAPI must be enabled before any command registration or argument creation
+        CommandAPI.onEnable();
 
         // Initialize FoliaLib for cross-platform scheduler support
         this.foliaLib = new FoliaLib(this);
@@ -77,6 +80,7 @@ public final class LXPlugin extends JavaPlugin {
             }
         }
 
+        CommandAPI.onDisable();
         MessageUtil.info("LiXiPlugin disabled");
     }
 

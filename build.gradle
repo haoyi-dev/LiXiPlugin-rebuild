@@ -56,8 +56,8 @@ dependencies {
     compileOnly("com.zaxxer:HikariCP:6.2.1")
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.3")
 
-    // Command API (shaded)
-    implementation("dev.jorel:commandapi-paper-shade:11.1.0")
+    // Command API (shaded) - Spigot shade works on Paper 1.20–1.21.11 (Paper shade requires 1.20.6+)
+    implementation("dev.jorel:commandapi-spigot-shade:11.1.0")
 
     // Config & FoliaLib (shaded)
     implementation("de.exlll:configlib-yaml:4.8.0")
