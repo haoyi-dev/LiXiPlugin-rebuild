@@ -1,0 +1,258 @@
+---
+title: Lệnh quản trị
+description: Lệnh quản trị cho LiXiPlugin
+---
+
+Trang này liệt kê tất cả các lệnh quản trị để quản lý LiXiPlugin. Tất cả các lệnh này yêu cầu quyền hạn `lixi.admin`.
+
+---
+
+## Lệnh admin chính
+
+### `/lixiadmin`
+
+**Bí danh:** `/lxa`
+
+**Quyền hạn:** `lixi.admin`
+
+**Mô tả:** Hiển thị danh sách tất cả các lệnh admin có sẵn.
+
+**Cách dùng:**
+
+```
+/lixiadmin
+```
+
+**Kết quả:**
+
+```
+=== LiXi Admin Commands ===
+/lixiadmin setitem - Set held item as envelope
+/lixiadmin reload - Reload configurations
+```
+
+---
+
+## Đặt vật phẩm phong bao
+
+### `/lixiadmin setitem`
+
+**Quyền hạn:** `lixi.admin`
+
+**Mô tả:** Đặt vật phẩm đang cầm làm vật phẩm phong bao lì xì. Lệnh này sẽ tự động phát hiện plugin vật phẩm tùy chỉnh bạn đang sử dụng (ItemsAdder, Oraxen hoặc Nexo) và lưu cấu hình.
+
+**Cách dùng:**
+
+```bash
+# 1. Lấy vật phẩm tùy chỉnh từ plugin vật phẩm của bạn
+/iaget red_envelope    # Ví dụ ItemsAdder
+/o give red_envelope    # Ví dụ Oraxen
+/nexo give red_envelope # Ví dụ Nexo
+
+# 2. Cầm vật phẩm trong tay chính
+
+# 3. Chạy lệnh setitem
+/lixiadmin setitem
+```
+
+**Nó làm gì:**
+
+1. **Phát hiện vật phẩm** bạn đang cầm bằng UniItem API
+2. **Xác định loại plugin** (ItemsAdder, Oraxen hoặc Nexo)
+3. **Lưu ID vật phẩm** vào `main-config.yml`
+4. **Xóa ID plugin khác** để tránh xung đột
+5. **Xác nhận thành công** bằng một tin nhắn
+
+**Ví dụ kết quả:**
+
+```
+Detected: itemsadder:red_envelope
+Set ItemsAdder item: red_envelope
+[Lì Xì] » Đã đặt vật phẩm lì xì thành công!
+```
+
+**Plugin được hỗ trợ:**
+
+| Plugin         | Ví dụ ID         |
+| -------------- | ---------------- |
+| **ItemsAdder** | `red_envelope`   |
+| **Oraxen**     | `lixi_envelope`  |
+| **Nexo**       | `lucky_envelope` |
+
+**Tin nhắn lỗi:**
+
+- **"Bạn phải cầm một vật phẩm trong tay!"** - Bạn phải cầm vật phẩm
+- **"Could not detect item type!"** - Vật phẩm là vanilla hoặc không được hỗ trợ
+- **"Unsupported plugin type"** - Plugin không phải ItemsAdder/Oraxen/Nexo
+
+:::tip[Thiết lập một lần]
+Bạn chỉ cần chạy lệnh này một lần. Cấu hình vật phẩm lưu trữ qua khởi động lại và reload server.
+:::
+
+Để xem hướng dẫn chi tiết, hãy xem [Hướng dẫn thiết lập vật phẩm phong bao](/guides/set-item/).
+
+---
+
+## Reload cấu hình
+
+### `/lixiadmin reload`
+
+**Quyền hạn:** `lixi.admin`
+
+**Mô tả:** Tải lại tất cả file cấu hình từ đĩa mà không cần khởi động lại server.
+
+**Cách dùng:**
+
+```
+/lixiadmin reload
+```
+
+**Điều gì được reload:**
+
+- `main-config.yml` - Tất cả cài đặt plugin
+- `message-config.yml` - Tất cả tin nhắn và định dạng
+
+**Điều gì KHÔNG được reload:**
+
+- Kết nối database (yêu cầu khởi động lại server)
+- Đăng ký service (yêu cầu khởi động lại server)
+- Phiên chat lixi đang hoạt động (tiếp tục với cài đặt cũ)
+- Phong bao lì xì (sử dụng dữ liệu database)
+
+**Trường hợp sử dụng:**
+
+- Sau khi chỉnh sửa bản dịch tin nhắn
+- Sau khi thay đổi giới hạn hoặc thời gian hết hạn
+- Sau khi cập nhật hiệu ứng âm thanh/hạt
+- Sau khi sửa tên hiển thị hoặc lore
+
+**Ví dụ quy trình:**
+
+```bash
+# 1. Chỉnh sửa file config
+# Sửa plugins/LiXiPlugin/message-config.yml
+
+# 2. Reload plugin
+/lixiadmin reload
+
+# 3. Xác minh thay đổi
+[Lì Xì] » Đã tải lại cấu hình thành công!
+```
+
+:::caution[Phiên đang hoạt động]
+Reload không ảnh hưởng đến phiên chat lixi đang hoạt động. Người chơi vẫn có thể nhận từ các phiên được tạo trước khi reload bằng định dạng tin nhắn cũ.
+:::
+
+---
+
+## Tóm tắt quyền hạn
+
+| Lệnh                 | Quyền hạn    | Mô tả                   |
+| -------------------- | ------------ | ----------------------- |
+| `/lixiadmin`         | `lixi.admin` | Hiển thị trợ giúp admin |
+| `/lixiadmin setitem` | `lixi.admin` | Đặt vật phẩm phong bao  |
+| `/lixiadmin reload`  | `lixi.admin` | Reload config           |
+
+:::note[OP mặc định]
+Theo mặc định, chỉ server operator mới có quyền hạn `lixi.admin`. Bạn có thể cấp nó cho người chơi hoặc nhóm cụ thể bằng plugin quyền hạn như LuckPerms.
+:::
+
+---
+
+## Nhiệm vụ admin phổ biến
+
+### Thiết lập ban đầu
+
+```bash
+# 1. Lấy vật phẩm tùy chỉnh cho phong bao
+/ia get red_envelope
+
+# 2. Đặt nó làm vật phẩm phong bao
+/lixiadmin setitem
+
+# 3. Kiểm tra tạo phong bao
+/lixi phongbao 1000
+```
+
+---
+
+### Dịch tin nhắn
+
+```bash
+# 1. Chỉnh sửa message-config.yml
+# Thay đổi tất cả tin nhắn sang tiếng Anh
+
+# 2. Reload
+/lixiadmin reload
+
+# 3. Kiểm tra trong game
+/lixi chat 1000 5
+```
+
+---
+
+### Điều chỉnh giới hạn
+
+```bash
+# 1. Chỉnh sửa main-config.yml
+# Thay đổi max-amount thành 10000000
+
+# 2. Reload
+/lixiadmin reload
+
+# 3. Người chơi giờ có thể sử dụng số tiền cao hơn
+/lixi chat 5M 20
+```
+
+---
+
+## Ví dụ
+
+### Thiết lập phong bao ItemsAdder
+
+```bash
+# Lấy vật phẩm tùy chỉnh
+/ia get lucky_red_envelope
+
+# Cầm nó trong tay chính
+# Sau đó chạy:
+/lixiadmin setitem
+```
+
+Kết quả:
+
+```
+Detected: itemsadder:lucky_red_envelope
+Set ItemsAdder item: lucky_red_envelope
+[Lì Xì] » Đã đặt vật phẩm lì xì thành công!
+```
+
+Config được cập nhật tự động:
+
+```yaml
+envelope:
+  itemsadder:
+    item-id: "lucky_red_envelope"
+  oraxen:
+    item-id: ""
+  nexo:
+    item-id: ""
+```
+
+---
+
+### Reload config nhanh
+
+```bash
+# Sau khi chỉnh sửa bất kỳ file config nào
+/lixiadmin reload
+```
+
+Kết quả:
+
+```
+[Lì Xì] » Đã tải lại cấu hình thành công!
+```
+
+Tất cả lệnh mới sẽ sử dụng cài đặt đã cập nhật!
+

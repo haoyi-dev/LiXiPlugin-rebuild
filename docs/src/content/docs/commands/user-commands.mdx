@@ -1,0 +1,238 @@
+---
+title: Lệnh người chơi
+description: Tất cả lệnh dành cho người chơi trong LiXiPlugin
+---
+
+Trang này liệt kê tất cả các lệnh có sẵn cho người chơi thông thường. Lệnh quản trị được ghi chép trong trang [Lệnh quản trị](/commands/admin-commands/).
+
+:::tip[Viết tắt số tiền]
+Tất cả lệnh hỗ trợ viết tắt tiền tiện lợi: **1k** (1,000), **1m** (1,000,000), **1b** (1,000,000,000), **1t** (1,000,000,000,000). Bạn cũng có thể dùng số thập phân như `1.5k` hoặc `2.25M`!
+:::
+
+---
+
+## Lệnh chính
+
+### `/lixi`
+
+**Bí danh:** `/lx`, `/luckmoney`
+
+**Quyền hạn:** Không (mặc định)
+
+**Mô tả:** Hiển thị danh sách tất cả các lệnh lixi có sẵn.
+
+**Cách dùng:**
+
+```
+/lixi
+```
+
+**Kết quả:**
+
+```
+LiXi Commands
+/lixi chat <money> <limit> - Create chat broadcast
+/lixi give <player> <money> - Direct transfer
+/lixi phongbao <money> - Create physical envelope
+Money formats: 100, 1k, 1.5M, 2T
+```
+
+---
+
+## Chat Broadcast
+
+### `/lixi chat <money> <limit>`
+
+**Quyền hạn:** `lixi.chat`
+
+**Mô tả:** Tạo một broadcast qua chat nơi người chơi có thể click để nhận số tiền ngẫu nhiên. Tổng số tiền được chia ngẫu nhiên cho những người chơi đầu tiên nhấn nhận.
+
+**Tham số:**
+
+- `<money>` - Tổng số tiền phân phối (hỗ trợ định dạng số)
+- `<limit>` - Số lượng slot nhận (bao nhiêu người có thể nhận)
+
+**Ví dụ sử dụng:**
+
+```bash
+# Tặng 10,000 cho 5 người
+/lixi chat 10000 5
+
+# Tặng 50k cho 10 người
+/lixi chat 50k 10
+
+# Tặng 1.5 triệu cho 30 người
+/lixi chat 1.5M 30
+```
+
+**Ràng buộc:**
+
+- Số tiền phải nằm giữa `min-amount` và `max-amount` (được cấu hình trong `main-config.yml`)
+- Limit phải nằm giữa `min-limit` và `max-limit` (được cấu hình trong `main-config.yml`)
+- Bạn phải có đủ tiền trong tài khoản
+- Tiền chưa nhận được hoàn lại sau `expiry-seconds` (mặc định 60 giây)
+
+**Người chơi thấy gì:**
+
+- Một tin nhắn broadcast xuất hiện trong chat với nút `[NHẬN NGAY]` có thể click
+- Người chơi đầu tiên click sẽ nhận được một phần ngẫu nhiên của tổng số tiền
+- Khi tất cả slot được nhận hoặc hết thời gian, phiên kết thúc
+
+---
+
+## Chuyển tiền trực tiếp
+
+### `/lixi give <player> <money>`
+
+**Quyền hạn:** `lixi.give`
+
+**Mô tả:** Chuyển tiền trực tiếp cho người chơi khác. Đơn giản và tức thì.
+
+**Tham số:**
+
+- `<player>` - Tên người chơi đích (phải online)
+- `<money>` - Số tiền chuyển (hỗ trợ định dạng số)
+
+**Ví dụ sử dụng:**
+
+```bash
+# Tặng 1000 cho Steve
+/lixi give Steve 1000
+
+# Tặng 25k cho Alex
+/lixi give Alex 25k
+
+# Tặng 2.5 triệu cho Notch
+/lixi give Notch 2.5M
+```
+
+**Ràng buộc:**
+
+- Người chơi đích phải online
+- Bạn không thể gửi tiền cho chính mình
+- Bạn phải có đủ tiền trong tài khoản
+
+---
+
+## Item phong bao lì xì
+
+### `/lixi phongbao <money>`
+
+**Bí danh:** `/lixi envelope`, `/lixi pb`
+
+**Quyền hạn:** `lixi.phongbao`
+
+**Mô tả:** Tạo một vật phẩm phong bao lì xì có thể trao đổi, lưu trữ hoặc tặng. Khi click chuột phải, người cầm sẽ nhận được tiền.
+
+**Tham số:**
+
+- `<money>` - Số tiền đặt vào phong bao (hỗ trợ định dạng số)
+
+**Ví dụ sử dụng:**
+
+```bash
+# Tạo phong bao 5000
+/lixi phongbao 5000
+
+# Tạo phong bao 100k
+/lixi phongbao 100k
+
+# Tạo phong bao 1 triệu
+/lixi phongbao 1M
+```
+
+**Ràng buộc:**
+
+- Bạn phải có đủ tiền trong tài khoản
+- Vật phẩm phong bao tùy chỉnh phải được cấu hình (xem [Thiết lập vật phẩm phong bao](/guides/set-item/))
+- Bạn phải có slot trống trong inventory
+
+**Tính năng:**
+
+- Phong bao có thể rơi, trao đổi hoặc lưu trữ
+- Chỉ hoạt động một lần - trở thành vật phẩm thường sau khi nhận
+- Hiển thị số tiền trong lore vật phẩm
+- Lưu trữ liên tục qua khởi động lại server (lưu trong database)
+
+---
+
+## Tham khảo định dạng tiền
+
+Tất cả lệnh chấp nhận số tiền hỗ trợ các định dạng sau:
+
+| Định dạng      | Ví dụ        | Giá trị thực                         |
+| -------------- | ------------ | ------------------------------------ |
+| Số thường      | `1000`       | 1,000                                |
+| Nghìn (k/K)    | `1k`, `1.5k` | 1,000, 1,500                         |
+| Triệu (m/M)    | `1M`, `2.5M` | 1,000,000, 2,500,000                 |
+| Tỷ (b/B)       | `1B`, `1.2B` | 1,000,000,000, 1,200,000,000         |
+| Nghìn tỷ (t/T) | `1T`, `5T`   | 1,000,000,000,000, 5,000,000,000,000 |
+
+:::tip[Hỗ trợ thập phân]
+Bạn có thể sử dụng số thập phân với bất kỳ định dạng nào: `1.5k` = 1,500 và `2.25M` = 2,250,000
+:::
+
+---
+
+## Tóm tắt quyền hạn
+
+| Lệnh             | Quyền hạn       | Mặc định  |
+| ---------------- | --------------- | --------- |
+| `/lixi`          | Không           | Mọi người |
+| `/lixi chat`     | `lixi.chat`     | OP        |
+| `/lixi give`     | `lixi.give`     | OP        |
+| `/lixi phongbao` | `lixi.phongbao` | OP        |
+
+Để xem tham khảo quyền hạn đầy đủ, hãy xem [Hướng dẫn quyền hạn](/guides/permissions/).
+
+---
+
+## Ví dụ
+
+### Tổ chức sự kiện
+
+```bash
+# Tạo một giveaway lớn cho 50 người
+/lixi chat 1M 50
+```
+
+Người chơi thấy:
+
+```
+[Lì Xì] » TênBạn đã gửi lì xì $1,000,000 cho 50 người! [NHẬN NGAY]
+```
+
+---
+
+### Cảm ơn người giúp đỡ
+
+```bash
+# Tặng 10k trực tiếp cho người chơi hữu ích
+/lixi give NguoiHuuIch 10k
+```
+
+Bạn thấy:
+
+```
+[Lì Xì] » Bạn đã gửi $10,000 cho NguoiHuuIch
+```
+
+Họ thấy:
+
+```
+[Lì Xì] » Bạn đã nhận $10,000 từ TênBạn!
+```
+
+---
+
+### Tạo phong bao quà tặng
+
+```bash
+# Tạo nhiều phong bao để trao đổi
+/lixi phongbao 5k
+/lixi phongbao 5k
+/lixi phongbao 5k
+```
+
+Bây giờ bạn có thể trao đổi hoặc rơi những phong bao này để người khác tìm thấy!
+

@@ -1,0 +1,223 @@
+---
+title: Cấu hình chính
+description: Tham khảo đầy đủ cho main-config.yml
+---
+
+File `main-config.yml` chứa tất cả cài đặt cốt lõi của plugin. File này nằm tại `plugins/LiXiPlugin/main-config.yml`.
+
+Sau khi thay đổi, reload config bằng `/lixiadmin reload`.
+
+---
+
+## Cấu hình Database
+
+Cấu hình cách LiXiPlugin lưu trữ dữ liệu.
+
+```yaml
+database:
+  # Loại database: SQLITE hoặc MARIADB
+  # SQLite được khuyến nghị cho server nhỏ
+  # MariaDB được khuyến nghị cho server lớn hoặc mạng lưới
+  type: SQLITE
+
+  # Database host (chỉ cho MariaDB)
+  host: localhost
+
+  # Database port (chỉ cho MariaDB)
+  port: 3306
+
+  # Tên database (chỉ cho MariaDB)
+  database: lixi
+
+  # Tên người dùng database (chỉ cho MariaDB)
+  username: root
+
+  # Mật khẩu database (chỉ cho MariaDB)
+  password: ""
+```
+
+### Tùy chọn
+
+| Tùy chọn   | Loại    | Mặc định    | Mô tả                                  |
+| ---------- | ------- | ----------- | -------------------------------------- |
+| `type`     | String  | `SQLITE`    | Loại database: `SQLITE` hoặc `MARIADB` |
+| `host`     | String  | `localhost` | Địa chỉ host MariaDB                   |
+| `port`     | Integer | `3306`      | Cổng MariaDB                           |
+| `database` | String  | `lixi`      | Tên database MariaDB                   |
+| `username` | String  | `root`      | Tên người dùng MariaDB                 |
+| `password` | String  | `""`        | Mật khẩu MariaDB                       |
+
+:::note
+SQLite lưu trữ dữ liệu tại `plugins/LiXiPlugin/database.db`. MariaDB yêu cầu server database riêng biệt.
+:::
+
+---
+
+## Cấu hình Chat Lixi
+
+Cài đặt cho lì xì broadcast qua chat.
+
+```yaml
+chat-lixi:
+  # Số tiền tối thiểu mỗi chat lixi broadcast
+  min-amount: 1000.0
+
+  # Số tiền tối đa mỗi chat lixi broadcast
+  max-amount: 1000000.0
+
+  # Số lượng slot nhận tối thiểu
+  min-limit: 1
+
+  # Số lượng slot nhận tối đa
+  max-limit: 50
+
+  # Thời gian (giây) trước khi lì xì chưa nhận hết hạn và hoàn lại cho người tạo
+  expiry-seconds: 60
+```
+
+### Tùy chọn
+
+| Tùy chọn         | Loại    | Mặc định    | Mô tả                                       |
+| ---------------- | ------- | ----------- | ------------------------------------------- |
+| `min-amount`     | Double  | `1000.0`    | Số tiền tối thiểu mỗi broadcast             |
+| `max-amount`     | Double  | `1000000.0` | Số tiền tối đa mỗi broadcast                |
+| `min-limit`      | Integer | `1`         | Số slot nhận tối thiểu                      |
+| `max-limit`      | Integer | `50`        | Số slot nhận tối đa                         |
+| `expiry-seconds` | Integer | `60`        | Giây trước khi tiền chưa nhận được hoàn lại |
+
+:::tip[Hành vi hết hạn]
+Khi chat lixi hết hạn, bất kỳ số tiền chưa nhận nào sẽ tự động hoàn lại cho người tạo.
+:::
+
+---
+
+## Cấu hình Phong bao
+
+Cài đặt cho vật phẩm phong bao lì xì.
+
+```yaml
+envelope:
+  # Cấu hình plugin vật phẩm tùy chỉnh
+  # Đặt ID vật phẩm cho mỗi plugin được hỗ trợ
+  # Để trống để tắt vật phẩm của plugin đó
+  # Plugin được kích hoạt đầu tiên sẽ được sử dụng
+  itemsadder:
+    # ID vật phẩm ItemsAdder (ví dụ: 'lixi_envelope')
+    item-id: ""
+
+  oraxen:
+    # ID vật phẩm Oraxen (ví dụ: 'lixi_envelope')
+    item-id: ""
+
+  nexo:
+    # ID vật phẩm Nexo (ví dụ: 'lixi_envelope')
+    item-id: ""
+
+  # Tên hiển thị cho vật phẩm phong bao (hỗ trợ MiniMessage)
+  display-name: "<color:#e80c00>Lì Xì</color>"
+
+  # Lore cho vật phẩm phong bao (hỗ trợ MiniMessage)
+  # Sử dụng placeholder %amount% cho số tiền
+  lore:
+    - "<gray>Chứa <gold>%amount%</gold></gray>"
+    - "<gray>Click chuột phải để nhận tiền!</gray>"
+```
+
+### Tùy chọn plugin vật phẩm
+
+| Tùy chọn             | Loại   | Mặc định | Mô tả                            |
+| -------------------- | ------ | -------- | -------------------------------- |
+| `itemsadder.item-id` | String | `""`     | ID vật phẩm tùy chỉnh ItemsAdder |
+| `oraxen.item-id`     | String | `""`     | ID vật phẩm tùy chỉnh Oraxen     |
+| `nexo.item-id`       | String | `""`     | ID vật phẩm tùy chỉnh Nexo       |
+
+:::caution[Ưu tiên plugin]
+Nếu nhiều ID vật phẩm được đặt, plugin sẽ sử dụng cái đầu tiên tìm thấy (theo thứ tự: ItemsAdder → Oraxen → Nexo). Khuyến nghị chỉ đặt một.
+:::
+
+### Tùy chọn hiển thị
+
+| Tùy chọn       | Loại     | Mặc định                       | Mô tả                               |
+| -------------- | -------- | ------------------------------ | ----------------------------------- |
+| `display-name` | String   | `<color:#e80c00>Lì Xì</color>` | Tên hiển thị vật phẩm (MiniMessage) |
+| `lore`         | String[] | Xem ở trên                     | Dòng lore vật phẩm (MiniMessage)    |
+
+**Placeholder có sẵn:**
+
+- `%amount%` - Số tiền trong phong bao
+
+---
+
+## Cấu hình hiệu ứng
+
+Hiệu ứng hình ảnh và âm thanh khi nhận lì xì.
+
+```yaml
+effects:
+  # Âm thanh phát khi nhận lì xì (namespace:sound_name)
+  sound: "minecraft:entity.experience_orb.pickup"
+
+  # Âm lượng (0.0 - 1.0)
+  volume: 1.0
+
+  # Cao độ âm thanh (0.5 - 2.0)
+  pitch: 1.0
+
+  # Bật hiệu ứng hạt khi nhận lì xì
+  particles: true
+```
+
+### Tùy chọn
+
+| Tùy chọn    | Loại    | Mặc định                                 | Mô tả                              |
+| ----------- | ------- | ---------------------------------------- | ---------------------------------- |
+| `sound`     | String  | `minecraft:entity.experience_orb.pickup` | ID namespace hiệu ứng âm thanh     |
+| `volume`    | Float   | `1.0`                                    | Âm lượng (0.0 - 1.0)               |
+| `pitch`     | Float   | `1.0`                                    | Cao độ âm thanh (0.5 - 2.0)        |
+| `particles` | Boolean | `true`                                   | Có hiển thị hiệu ứng hạt hay không |
+
+:::tip[Âm thanh tùy chỉnh]
+Bạn có thể sử dụng bất kỳ âm thanh Minecraft nào hoặc âm thanh tùy chỉnh từ resource pack. Sử dụng định dạng `namespace:sound.name` (ví dụ: `minecraft:entity.player.levelup`).
+:::
+
+---
+
+## Ví dụ cấu hình
+
+Đây là ví dụ hoàn chỉnh với cài đặt được khuyến nghị:
+
+```yaml
+database:
+  type: SQLITE
+  host: localhost
+  port: 3306
+  database: lixi
+  username: root
+  password: ""
+
+chat-lixi:
+  min-amount: 5000.0
+  max-amount: 500000.0
+  min-limit: 3
+  max-limit: 30
+  expiry-seconds: 90
+
+envelope:
+  itemsadder:
+    item-id: "red_envelope"
+  oraxen:
+    item-id: ""
+  nexo:
+    item-id: ""
+  display-name: "<gradient:#ff0000:#ffaa00>Phong Bao May Mắn</gradient>"
+  lore:
+    - "<gray>Chứa <gold>%amount%</gold></gray>"
+    - "<yellow>Click chuột phải để nhận!</yellow>"
+
+effects:
+  sound: "minecraft:entity.player.levelup"
+  volume: 0.8
+  pitch: 1.2
+  particles: true
+```
+

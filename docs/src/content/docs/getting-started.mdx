@@ -1,0 +1,153 @@
+---
+title: Bắt đầu
+description: Cài đặt và cấu hình LiXiPlugin trên server của bạn
+---
+
+Hướng dẫn này sẽ hướng dẫn bạn cài đặt và thiết lập LiXiPlugin trên server Minecraft Paper hoặc Folia của bạn.
+
+## Điều kiện tiên quyết
+
+Trước khi cài đặt LiXiPlugin, hãy đảm bảo bạn có:
+
+- Server **Paper 1.20+** hoặc **Folia**
+- **Java 17** trở lên
+- Plugin **Vault** đã cài đặt
+- Một **plugin kinh tế** (ví dụ: EssentialsX, CMI, v.v.)
+
+:::tip[Phụ thuộc tùy chọn]
+Để sử dụng vật phẩm phong bao qua các plugin custom item, bạn sẽ cần cài 1 trong các plugin sau:
+
+- **ItemsAdder**
+- **Oraxen**
+- **Nexo**
+
+Plugin hoạt động mà không cần các plugin này, nhưng bạn sẽ không thể tạo phong bao lì xì dưới dạng item custom.
+:::
+
+---
+
+## Cài đặt
+
+### Bước 1: Tải xuống
+
+Tải xuống `LiXiPlugin.jar` mới nhất từ trang [GitHub Releases](https://github.com/SimpMC-Studio/LiXiPlugin/releases).
+
+### Bước 2: Cài đặt phụ thuộc
+
+1. **Vault** - Tải từ [SpigotMC](https://www.spigotmc.org/resources/vault.34315/)
+2. Đặt `Vault.jar` vào thư mục `plugins/` của bạn
+3. Cài đặt plugin kinh tế nếu bạn chưa có
+
+### Bước 3: Cài đặt LiXiPlugin
+
+1. Đặt `LiXiPlugin.jar` vào thư mục `plugins/` của server
+2. Khởi động lại server (hoặc sử dụng trình quản lý plugin để tải)
+
+---
+
+## Lần chạy đầu tiên
+
+Khi bạn khởi động server lần đầu tiên với LiXiPlugin:
+
+1. Plugin sẽ tạo thư mục `LiXiPlugin/` trong thư mục plugins
+2. Hai file cấu hình sẽ được tạo:
+   - `main-config.yml` - Cài đặt plugin chính
+   - `message-config.yml` - Tất cả tin nhắn cho người chơi
+
+### Cấu hình mặc định
+
+Theo mặc định, plugin sử dụng:
+
+- **Database SQLite** (lưu tại `LiXiPlugin/database.db`)
+- **Tin nhắn tiếng Việt** (có thể tùy chỉnh hoàn toàn)
+- **Không có vật phẩm phong bao tùy chỉnh** (bạn cần thiết lập thủ công)
+
+---
+
+## Thiết lập Database
+
+### Sử dụng SQLite (Khuyến nghị cho server nhỏ)
+
+SQLite là mặc định và không yêu cầu thiết lập bổ sung. File database được tạo tự động tại `plugins/LiXiPlugin/database.db`.
+
+### Sử dụng MariaDB (Khuyến nghị cho server lớn)
+
+Để có hiệu suất tốt hơn trên server lớn hoặc mạng lưới, chuyển sang MariaDB:
+
+1. Mở `main-config.yml`
+2. Tìm phần `database`:
+
+```yaml
+database:
+  type: MARIADB
+  host: localhost
+  port: 3306
+  database: lixi
+  username: root
+  password: mat_khau_cua_ban
+```
+
+3. Tạo database:
+
+```sql
+CREATE DATABASE lixi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+4. Reload plugin: `/lixiadmin reload`
+
+Plugin sẽ tự động tạo tất cả các bảng cần thiết.
+
+---
+
+## Thiết lập vật phẩm phong bao
+
+Nếu bạn muốn sử dụng vật phẩm phong bao lì xì custom, bạn cần cấu hình vật phẩm tùy chỉnh:
+
+1. Cài đặt **ItemsAdder**, **Oraxen**, hoặc **Nexo**
+2. Tạo vật phẩm tùy chỉnh trong plugin đó (ví dụ: phong bao đỏ)
+3. **Cầm vật phẩm trong tay**
+4. Chạy `/lixiadmin setitem`
+
+Plugin sẽ tự động check plugin bạn đang sử dụng và lưu ID vật phẩm vào config.
+
+Xem [Hướng dẫn thiết lập vật phẩm](/guides/set-item/) để biết hướng dẫn chi tiết.
+
+---
+
+## Tùy chỉnh tin nhắn
+
+Tất cả tin nhắn đều trong `message-config.yml`. Bạn có thể tùy chỉnh:
+
+- Nội dung tin nhắn (hỗ trợ định dạng [MiniMessage](https://docs.advntr.dev/minimessage/format.html))
+- Màu sắc và gradient
+- Placeholder
+
+Ví dụ:
+
+```yaml
+chat-lixi-claim-success: "<prefix><green>Bạn đã nhận được</green> <gold>%amount%</gold><green>!</green>"
+```
+
+Sau khi chỉnh sửa, reload bằng `/lixiadmin reload`.
+
+---
+
+## Xác minh
+
+Để xác minh mọi thứ hoạt động:
+
+1. Vào server của bạn
+2. Chạy `/lixi` - Bạn sẽ thấy danh sách các lệnh có sẵn
+3. Thử tạo chat broadcast: `/lixi chat 1000 5`
+4. Kiểm tra console để tìm lỗi
+
+Nếu bạn thấy lỗi về kinh tế, hãy đảm bảo Vault và plugin kinh tế của bạn được cài đặt đúng cách.
+
+---
+
+## Bước tiếp theo
+
+- [Cấu hình cài đặt chính](/configuration/main-config/)
+- [Học tất cả lệnh](/commands/user-commands/)
+- [Thiết lập quyền hạn](/guides/permissions/)
+

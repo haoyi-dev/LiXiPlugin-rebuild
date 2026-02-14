@@ -1,0 +1,307 @@
+---
+title: Thiết lập vật phẩm phong bao lì xì
+description: Hướng dẫn từng bước để cấu hình vật phẩm phong bao lì xì tùy chỉnh cho LiXiPlugin
+---
+
+Hướng dẫn này hướng dẫn bạn thiết lập vật phẩm tùy chỉnh cho phong bao lì xì. Phong bao cho phép người chơi tạo vật phẩm có thể trao đổi chứa tiền.
+
+---
+
+## Điều kiện tiên quyết
+
+Bạn có thể tải config và file texture được làm sẵn và đặt vào thư mục của Plugin Nexo hoặc ItemsAdder
+
+- [ItemsAdder-Config](https://drive.google.com/file/d/1yicc8VdExr9TNkldN_4xDoTesc4zVloe/view?usp=sharing)
+- [Nexo-Config](https://drive.google.com/file/d/1XFpDTnJ_wRuE8WyF81pJywfKhJ2zvfM3/view?usp=sharing)
+
+Trước khi bạn có thể sử dụng phong bao dưới dạng Item, bạn cần:
+
+1. **Plugin vật phẩm tùy chỉnh** - Một trong:
+   - [ItemsAdder](https://www.spigotmc.org/resources/73355/)
+   - [Oraxen](https://www.spigotmc.org/resources/72448/)
+   - [Nexo](https://www.spigotmc.org/resources/116878/)
+
+2. **Vật phẩm tùy chỉnh đã tạo** - Thiết kế hoặc tải xuống vật phẩm phong bao đỏ trong plugin vật phẩm của bạn
+
+3. **Quyền hạn admin** - Quyền hạn `lixi.admin`
+
+---
+
+## Bước 1: Tạo vật phẩm tùy chỉnh
+
+Đầu tiên, tạo vật phẩm tùy chỉnh trong plugin vật phẩm của bạn. Đây sẽ là phong bao lì xì mà người chơi nhận được.
+
+### Ví dụ ItemsAdder
+
+Chỉnh sửa config ItemsAdder của bạn (ví dụ: `items/lixi.yml`):
+
+```yaml
+info:
+  namespace: lixi
+
+items:
+  red_envelope:
+    display_name: "<gradient:#ff0000:#ffaa00>Phong Bao Đỏ</gradient>"
+    permission: "lixi.use"
+    resource:
+      material: PAPER
+      generate: true
+      model_path: item/red_envelope
+    specific_properties:
+      note_block:
+        custom_model_data: 12001
+```
+
+Sau đó chạy:
+
+```bash
+/iazip
+/iareload
+```
+
+### Ví dụ Oraxen
+
+Chỉnh sửa config Oraxen của bạn (ví dụ: `items.yml`):
+
+```yaml
+red_envelope:
+  displayname: "<gradient:#ff0000:#ffaa00>Phong Bao Đỏ</gradient>"
+  material: PAPER
+  Pack:
+    generate_model: true
+    model: red_envelope
+    custom_model_data: 12001
+```
+
+Sau đó chạy:
+
+```bash
+/oraxen reload all
+```
+
+### Ví dụ Nexo
+
+Chỉnh sửa config Nexo của bạn (ví dụ: `items/envelopes.yml`):
+
+```yaml
+red_envelope:
+  type: ITEM
+  material: PAPER
+  display_name: "<gradient:#ff0000:#ffaa00>Phong Bao Đỏ</gradient>"
+  model: 12001
+```
+
+Sau đó chạy:
+
+```bash
+/nexo reload
+```
+
+---
+
+## Bước 2: Lấy vật phẩm
+
+Sử dụng lệnh give của plugin vật phẩm để lấy vật phẩm tùy chỉnh:
+
+```bash
+# ItemsAdder
+/ia get red_envelope
+
+# Oraxen
+/o give red_envelope
+
+# Nexo
+/nexo give red_envelope
+```
+
+Bạn sẽ có vật phẩm tùy chỉnh trong inventory.
+
+---
+
+## Bước 3: Chạy lệnh SetItem
+
+1. **Cầm vật phẩm tùy chỉnh** trong tay chính (không phải tay phụ)
+2. **Chạy lệnh:**
+
+```bash
+/lixiadmin setitem
+```
+
+3. **Kiểm tra kết quả:**
+
+Nếu thành công, bạn sẽ thấy:
+
+```
+Detected: itemsadder:red_envelope
+Set ItemsAdder item: red_envelope
+[Lì Xì] » Đã đặt vật phẩm lì xì thành công!
+```
+
+Plugin tự động:
+
+- Phát hiện vật phẩm từ plugin nào
+- Trích xuất ID vật phẩm
+- Lưu vào `main-config.yml`
+- Xóa ID plugin khác để tránh xung đột
+
+---
+
+## Bước 4: Xác minh cấu hình
+
+Kiểm tra `main-config.yml` của bạn - bây giờ nó sẽ hiển thị:
+
+```yaml
+envelope:
+  itemsadder:
+    item-id: "red_envelope" # ✓ ID vật phẩm của bạn
+  oraxen:
+    item-id: "" # ✗ Đã xóa
+  nexo:
+    item-id: "" # ✗ Đã xóa
+  display-name: "<color:#e80c00>Lì Xì</color>"
+  lore:
+    - "<gray>Chứa <gold>%amount%</gold></gray>"
+    - "<gray>Click chuột phải để nhận tiền!</gray>"
+```
+
+:::tip[Ghi đè tên hiển thị]
+Cài đặt `display-name` và `lore` trong config sẽ **ghi đè** tên và lore mặc định của vật phẩm khi phong bao được tạo. Bạn có thể tùy chỉnh chúng để phù hợp với ngôn ngữ hoặc chủ đề của server.
+:::
+
+---
+
+## Bước 5: Kiểm tra
+
+Tạo phong bao kiểm tra để xác minh mọi thứ hoạt động:
+
+```bash
+/lixi phongbao 1000
+```
+
+Bạn sẽ nhận được vật phẩm phong bao tùy chỉnh với:
+
+- Model/texture tùy chỉnh của bạn
+- Tên hiển thị đã cấu hình
+- Lore hiển thị số tiền (1,000)
+
+Click chuột phải vào phong bao để nhận tiền!
+
+---
+
+## Khắc phục sự cố
+
+### "Bạn phải cầm một vật phẩm trong tay!"
+
+**Vấn đề:** Bạn không cầm gì, hoặc vật phẩm trong tay phụ.
+
+**Giải pháp:** Đảm bảo vật phẩm tùy chỉnh trong **tay chính** (slot bạn đang cầm).
+
+---
+
+### "Could not detect item type!"
+
+**Vấn đề:** Vật phẩm là vanilla (không từ plugin vật phẩm tùy chỉnh) hoặc không được hỗ trợ.
+
+**Giải pháp:**
+
+- Xác minh bạn đang cầm vật phẩm tùy chỉnh từ ItemsAdder/Oraxen/Nexo
+- Kiểm tra plugin vật phẩm tùy chỉnh đã cài đặt và tải
+- Thử `/ia get <item>` (hoặc tương đương) để lấy vật phẩm mới
+
+---
+
+### "Unsupported plugin type: XYZ"
+
+**Vấn đề:** Vật phẩm từ plugin mà LiXiPlugin không hỗ trợ.
+
+**Giải pháp:**
+
+- Chỉ **ItemsAdder**, **Oraxen** và **Nexo** được hỗ trợ
+- Yêu cầu hỗ trợ plugin khác trên [GitHub Issues](https://github.com/SimpMC-Studio/LiXiPlugin/issues)
+
+---
+
+### Phong bao tạo nhưng hiển thị vật phẩm sai
+
+**Vấn đề:** Lệnh setitem hoạt động, nhưng `/lixi phongbao` cho vật phẩm khác.
+
+**Giải pháp:**
+
+1. Kiểm tra plugin vật phẩm tùy chỉnh nào thực sự được cài đặt
+2. Xác minh ID vật phẩm đúng trong `main-config.yml`
+3. Đảm bảo chỉ MỘT `item-id` của plugin được đặt (những cái khác phải là `""`)
+4. Chạy `/lixiadmin reload` sau khi chỉnh sửa config thủ công
+
+---
+
+## Thay đổi vật phẩm phong bao
+
+Để chuyển sang vật phẩm phong bao khác:
+
+1. Lấy vật phẩm tùy chỉnh mới
+2. Cầm nó trong tay chính
+3. Chạy lại `/lixiadmin setitem`
+
+Plugin sẽ tự động xóa ID vật phẩm cũ và lưu ID mới.
+
+---
+
+## Tên hiển thị & Lore tùy chỉnh
+
+Bạn có thể tùy chỉnh cách phong bao xuất hiện trong `main-config.yml`:
+
+```yaml
+envelope:
+  display-name: "<gradient:#ff0000:#ffaa00>Phong Bao Đỏ May Mắn</gradient>"
+  lore:
+    - "<gray>Chứa <gold>%amount%</gold></gray>"
+    - "<yellow>Click chuột phải để nhận!</yellow>"
+    - ""
+    - "<dark_gray>Từ TênServerCủaBạn</dark_gray>"
+```
+
+**Placeholder có sẵn:**
+
+- `%amount%` - Số tiền trong phong bao
+
+Tất cả văn bản hỗ trợ định dạng [MiniMessage](https://docs.advntr.dev/minimessage/format.html).
+
+Sau khi chỉnh sửa, reload:
+
+```bash
+/lixiadmin reload
+```
+
+---
+
+## Ví dụ: Thiết lập hoàn chỉnh
+
+Đây là ví dụ đầy đủ sử dụng ItemsAdder:
+
+```bash
+# 1. Tạo vật phẩm trong config ItemsAdder
+# Chỉnh sửa plugins/ItemsAdder/data/items_packs/lixi/items.yml
+# Thêm định nghĩa vật phẩm red_envelope
+
+# 2. Reload ItemsAdder
+/iazip
+/iareload
+
+# 3. Lấy vật phẩm
+/ia get red_envelope
+
+# 4. Cầm trong tay chính và chạy
+/lixiadmin setitem
+
+# 5. Xác minh trong console
+# Kết quả: "Detected: itemsadder:red_envelope"
+
+# 6. Kiểm tra tạo phong bao
+/lixi phongbao 5000
+
+# 7. Click chuột phải phong bao để nhận
+# Bạn sẽ nhận được $5,000!
+```
+
+Xong! Phong bao lì xì đã được setup thành công.
+

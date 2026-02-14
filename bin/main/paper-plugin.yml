@@ -1,0 +1,25 @@
+name: LiXiPlugin
+version: "$version"
+main: me.typical.lixiplugin.LXPlugin
+description: Give out lucky money :D
+author: typical.smc
+website: https://github.com/SimpMC-Studio/LiXiPlugin
+api-version: "1.21"
+loader: me.typical.lixiplugin.LXPluginLoader
+folia-supported: true
+# Optional dependencies
+dependencies:
+  server:
+    Vault:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    Nexo:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    ItemsAdder:
+      load: BEFORE
+      required: false
+      join-classpath: true
+

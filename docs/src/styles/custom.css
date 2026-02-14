@@ -1,0 +1,55 @@
+/* LiXiPlugin Theme - Red & Gold Vietnamese Lucky Money Aesthetic */
+
+:root {
+  /* Primary red accent (from #e80c00 palette) */
+  --sl-hue-accent: 5;
+  --sl-color-accent-low: #2d0400;
+  --sl-color-accent: #e80c00;
+  --sl-color-accent-high: #ff4433;
+
+  /* Gold highlights for secondary accents */
+  --sl-color-text-accent: #ffaa00;
+
+  /* Warm background tones */
+  --sl-color-bg: #0f0f0f;
+  --sl-color-bg-nav: #1a0a00;
+
+  /* Link colors - golden */
+  --sl-color-white: #ffffff;
+}
+
+/* Dark theme overrides */
+[data-theme='dark'] {
+  --sl-color-accent-low: #2d0400;
+  --sl-color-accent: #e80c00;
+  --sl-color-accent-high: #ff4433;
+  --sl-color-text-accent: #ffaa00;
+}
+
+/* Light theme overrides */
+[data-theme='light'] {
+  --sl-color-accent-low: #ffe5e5;
+  --sl-color-accent: #e80c00;
+  --sl-color-accent-high: #a00800;
+  --sl-color-text-accent: #cc8800;
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #fff5f0;
+}
+
+/* Custom heading styles with gold gradient */
+.sl-markdown-content h1 {
+  background: linear-gradient(120deg, #ff0000 0%, #ffaa00 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Code blocks with red accent */
+.sl-markdown-content pre {
+  border-left: 3px solid var(--sl-color-accent);
+}
+
+/* Callout boxes */
+.sl-markdown-content aside {
+  border-left-color: var(--sl-color-accent);
+}

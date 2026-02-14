@@ -1,0 +1,33 @@
+---
+title: Quyền hạn
+description: Tham khảo quyền hạn đầy đủ cho LiXiPlugin
+---
+
+Trang này liệt kê tất cả các node quyền hạn được sử dụng bởi LiXiPlugin. Sử dụng những node này với plugin quyền hạn của bạn (ví dụ: LuckPerms, PermissionsEx, GroupManager) để kiểm soát ai có thể sử dụng tính năng nào.
+
+---
+
+## Quyền hạn người dùng
+
+Những quyền hạn này kiểm soát quyền truy cập vào lệnh người chơi thông thường.
+
+| Quyền hạn       | Mô tả                                  | Mặc định | Lệnh             |
+| --------------- | -------------------------------------- | -------- | ---------------- |
+| `lixi.chat`     | Tạo chat broadcast lì xì               | OP       | `/lixi chat`     |
+| `lixi.give`     | Gửi tiền trực tiếp cho người chơi khác | OP       | `/lixi give`     |
+| `lixi.phongbao` | Tạo vật phẩm phong bao lì xì           | OP       | `/lixi phongbao` |
+
+---
+
+## Quyền hạn admin
+
+Những quyền hạn này kiểm soát quyền truy cập vào tính năng quản trị.
+
+| Quyền hạn    | Mô tả                      | Mặc định | Lệnh                                                    |
+| ------------ | -------------------------- | -------- | ------------------------------------------------------- |
+| `lixi.admin` | Truy cập tất cả lệnh admin | OP       | `/lixiadmin`, `/lixiadmin setitem`, `/lixiadmin reload` |
+
+:::note[OP mặc định]
+Tất cả quyền hạn mặc định là **chỉ OP**. Người chơi không OP sẽ không thể sử dụng bất kỳ lệnh LiXi nào trừ khi bạn cấp quyền hạn rõ ràng.
+:::
+
