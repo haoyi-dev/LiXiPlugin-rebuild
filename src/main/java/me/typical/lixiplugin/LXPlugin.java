@@ -7,6 +7,9 @@ import lombok.Getter;
 import me.typical.lixiplugin.commands.AdminCommandHandler;
 import me.typical.lixiplugin.commands.CommandHandler;
 import me.typical.lixiplugin.config.ConfigManager;
+import me.typical.lixiplugin.economy.EconomyProvider;
+import me.typical.lixiplugin.economy.LixiCurrency;
+import me.typical.lixiplugin.hook.PlayerPointsHook;
 import me.typical.lixiplugin.hook.UniItemHook;
 import me.typical.lixiplugin.hook.VaultHook;
 import me.typical.lixiplugin.service.ChatLixiService;
@@ -22,10 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Main plugin class for LiXiPlugin.
- * Manages all services and the plugin lifecycle.
- */
+/** Main plugin class. Orchestrates services. */
 public final class LXPlugin extends JavaPlugin {
 
     @Getter
@@ -49,17 +49,10 @@ public final class LXPlugin extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
-        // CommandAPI must be enabled before any command registration or argument creation
         CommandAPI.onEnable();
-
-        // Initialize FoliaLib for cross-platform scheduler support
         this.foliaLib = new FoliaLib(this);
         MessageUtil.info("FoliaLib initialized");
-
-        // Load configurations
         this.configManager = new ConfigManager(this);
-
-        // Register all services
         registerServices();
 
         MessageUtil.info("LiXiPlugin enabled successfully!");
@@ -67,7 +60,6 @@ public final class LXPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Shutdown services in reverse order
         MessageUtil.info("Shutting down services...");
         for (int i = serviceOrder.size() - 1; i >= 0; i--) {
             IService service = serviceOrder.get(i);
@@ -84,15 +76,10 @@ public final class LXPlugin extends JavaPlugin {
         MessageUtil.info("LiXiPlugin disabled");
     }
 
-    /**
-     * Register all plugin services in the correct order.
-     * Services are initialized in order and shut down in reverse order.
-     */
     private void registerServices() {
         MessageUtil.info("Registering services...");
-
-        // Register services in dependency order
         registerService(new VaultHook());           // Economy integration first
+        registerService(new PlayerPointsHook());    // PlayerPoints (optional)
         registerService(new DatabaseManager());     // Database before envelope operations
         registerService(new UniItemHook());         // Item provider before envelope creation
         registerService(new ChatLixiService());     // Chat lixi service
@@ -103,17 +90,11 @@ public final class LXPlugin extends JavaPlugin {
         MessageUtil.info("All services registered successfully");
     }
 
-    /**
-     * Register and initialize a single service.
-     * If the service implements Listener, it will be automatically registered.
-     */
     private void registerService(IService service) {
         try {
             service.setup();
             services.put(service.getClass(), service);
             serviceOrder.add(service);
-
-            // Auto-register as listener if applicable
             if (service instanceof Listener) {
                 getServer().getPluginManager().registerEvents((Listener) service, this);
                 MessageUtil.info("Service " + service.getClass().getSimpleName() + " registered as listener");
@@ -126,15 +107,15 @@ public final class LXPlugin extends JavaPlugin {
         }
     }
 
-    /**
-     * Get a service instance by its class.
-     *
-     * @param clazz The service class
-     * @param <T>   The service type
-     * @return The service instance, or null if not found
-     */
     @SuppressWarnings("unchecked")
     public <T extends IService> T getService(Class<T> clazz) {
         return (T) services.get(clazz);
+    }
+
+    public EconomyProvider getEconomyProvider(LixiCurrency currency) {
+        return switch (currency) {
+            case VAULT -> getService(VaultHook.class);
+            case POINTS -> getService(PlayerPointsHook.class);
+        };
     }
 }

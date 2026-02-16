@@ -5,14 +5,7 @@ import dev.jorel.commandapi.arguments.CustomArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import me.typical.lixiplugin.util.MoneyUtil;
 
-/**
- * Custom CommandAPI argument for parsing money values with short format support.
- * Supports formats:
- * - Regular numbers: "100", "1500.50"
- * - Thousands: "1k", "1.5k"
- * - Millions: "1M", "2.5M"
- * - Trillions: "1T", "5.5T"
- */
+/** CommandAPI argument: parses 100, 1k, 1.5M, 2T. */
 public class MoneyArgument extends CustomArgument<Double, String> {
 
     public MoneyArgument(String nodeName) {

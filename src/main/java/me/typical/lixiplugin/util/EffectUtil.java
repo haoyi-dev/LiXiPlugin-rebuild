@@ -9,23 +9,13 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 
-/**
- * Utility class for playing visual and sound effects.
- */
 public class EffectUtil {
 
-    /**
-     * Play the lixi receive effect for a player
-     *
-     * @param player The player to play the effect for
-     */
     public static void playLixiEffect(Player player) {
         MainConfig.EffectsConfig effects = LXPlugin.getInstance()
                 .getConfigManager()
                 .getConfig(MainConfig.class)
                 .getEffects();
-
-        // Play sound
         try {
             String[] soundParts = effects.getSound().split(":");
             if (soundParts.length == 2) {
@@ -40,32 +30,22 @@ public class EffectUtil {
         } catch (Exception e) {
             MessageUtil.warn("Failed to play sound: " + effects.getSound());
         }
-
-        // Play particles
         if (effects.isParticles()) {
             Location loc = player.getLocation().add(0, 1, 0);
-
-            // Red and gold particles (Vietnamese lucky colors)
             Particle.DustOptions redDust = new Particle.DustOptions(Color.RED, 1.5f);
             Particle.DustOptions goldDust = new Particle.DustOptions(Color.fromRGB(255, 215, 0), 1.5f);
-
-            // Spawn particles in a circle around player
             for (int i = 0; i < 20; i++) {
                 double angle = 2 * Math.PI * i / 20;
                 double x = Math.cos(angle) * 0.5;
                 double z = Math.sin(angle) * 0.5;
 
                 Location particleLoc = loc.clone().add(x, 0, z);
-
-                // Alternate between red and gold (REDSTONE = dust particle in 1.20.x)
                 if (i % 2 == 0) {
                     player.spawnParticle(Particle.REDSTONE, particleLoc, 1, 0, 0, 0, 0, redDust);
                 } else {
                     player.spawnParticle(Particle.REDSTONE, particleLoc, 1, 0, 0, 0, 0, goldDust);
                 }
             }
-
-            // Add some sparkle on top
             player.spawnParticle(Particle.END_ROD, loc.clone().add(0, 0.5, 0), 5, 0.3, 0.3, 0.3, 0.02);
         }
     }

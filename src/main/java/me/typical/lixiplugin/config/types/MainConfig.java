@@ -4,10 +4,6 @@ import de.exlll.configlib.Comment;
 import de.exlll.configlib.Configuration;
 import lombok.Getter;
 
-/**
- * Main configuration file for LiXiPlugin.
- * Contains database settings and feature limits.
- */
 @Configuration
 @Getter
 public class MainConfig {
@@ -53,11 +49,17 @@ public class MainConfig {
     @Configuration
     @Getter
     public static class ChatLixiConfig {
-        @Comment("Minimum amount per chat lixi broadcast")
+        @Comment("Minimum amount per chat lixi broadcast (money)")
         private double minAmount = 1000.0;
 
-        @Comment("Maximum amount per chat lixi broadcast")
+        @Comment("Maximum amount per chat lixi broadcast (money)")
         private double maxAmount = 1000000.0;
+
+        @Comment("Minimum points per chat lixi broadcast (PlayerPoints)")
+        private int minPoints = 10;
+
+        @Comment("Maximum points per chat lixi broadcast (PlayerPoints)")
+        private int maxPoints = 100000;
 
         @Comment("Minimum number of claim slots")
         private int minLimit = 1;
@@ -72,6 +74,12 @@ public class MainConfig {
     @Configuration
     @Getter
     public static class EnvelopeConfig {
+        @Comment("Minimum points for points-based envelope (PlayerPoints)")
+        private int minPoints = 10;
+
+        @Comment("Maximum points for points-based envelope (PlayerPoints)")
+        private int maxPoints = 100000;
+
         @Comment({
                 "Custom item plugin configurations",
                 "Set the item ID for each supported plugin",

@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'me.typical'
-version = '1.1'
+version = '1.2.1'
 
 repositories {
     mavenCentral()
@@ -33,6 +33,10 @@ repositories {
     maven {
         name = "placeholderapi"
         url = "https://repo.extendedclip.com/content/repositories/placeholderapi/"
+    }
+    maven {
+        name = "rosewood"
+        url = "https://repo.rosewooddev.io/repository/public/"
     }
     maven {
         name = "stellardrift"
@@ -66,6 +70,7 @@ dependencies {
     // External plugin APIs (compile-only)
     compileOnly("net.milkbowl.vault:VaultAPI:1.7")
     compileOnly("me.clip:placeholderapi:2.11.6")
+    compileOnly("org.black_ixx:playerpoints:3.2.2")
 }
 
 tasks {

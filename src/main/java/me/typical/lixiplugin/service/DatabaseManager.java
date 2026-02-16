@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.typical.lixiplugin.LXPlugin;
 import me.typical.lixiplugin.config.types.MainConfig;
+import me.typical.lixiplugin.economy.LixiCurrency;
 import me.typical.lixiplugin.util.MessageUtil;
 
 import java.io.File;
@@ -15,10 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Manages database connections using HikariCP.
- * Supports both SQLite and MariaDB backends.
- */
+/** HikariCP database (SQLite/MariaDB). */
 public class DatabaseManager implements IService {
 
     private HikariDataSource dataSource;
@@ -40,8 +38,6 @@ public class DatabaseManager implements IService {
 
         dataSource = new HikariDataSource(config);
         MessageUtil.info("Database connection pool established");
-
-        // Create tables
         createTables();
     }
 
@@ -82,17 +78,30 @@ public class DatabaseManager implements IService {
                     uuid VARCHAR(36) PRIMARY KEY,
                     amount DOUBLE NOT NULL,
                     creator_uuid VARCHAR(36) NOT NULL,
-                    status VARCHAR(10) NOT NULL DEFAULT 'UNUSED'
+                    status VARCHAR(10) NOT NULL DEFAULT 'UNUSED',
+                    currency_type VARCHAR(10) NOT NULL DEFAULT 'VAULT'
                 )
                 """;
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(createEnvelopesTable)) {
             stmt.execute();
+            migrateAddCurrencyType(conn);
             MessageUtil.info("Database tables created successfully");
         } catch (SQLException e) {
             MessageUtil.error("Failed to create database tables");
             e.printStackTrace();
+        }
+    }
+
+    private void migrateAddCurrencyType(Connection conn) {
+        try {
+            conn.prepareStatement("ALTER TABLE envelopes ADD COLUMN currency_type VARCHAR(10) NOT NULL DEFAULT 'VAULT'").executeUpdate();
+            MessageUtil.info("Database migrated: added currency_type column");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) {
+                MessageUtil.warn("Migration note: " + e.getMessage());
+            }
         }
     }
 
@@ -104,29 +113,19 @@ public class DatabaseManager implements IService {
         }
     }
 
-    /**
-     * Get a connection from the pool
-     */
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
 
-    /**
-     * Insert a new envelope into the database
-     *
-     * @param id      The unique envelope ID
-     * @param amount  The amount of money in the envelope
-     * @param creator The UUID of the player who created the envelope
-     * @return CompletableFuture that completes when insert is done
-     */
-    public CompletableFuture<Void> insertEnvelope(UUID id, double amount, UUID creator) {
+    public CompletableFuture<Void> insertEnvelope(UUID id, double amount, UUID creator, LixiCurrency currencyType) {
         return CompletableFuture.runAsync(() -> {
-            String sql = "INSERT INTO envelopes (uuid, amount, creator_uuid, status) VALUES (?, ?, ?, 'UNUSED')";
+            String sql = "INSERT INTO envelopes (uuid, amount, creator_uuid, status, currency_type) VALUES (?, ?, ?, 'UNUSED', ?)";
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, id.toString());
                 stmt.setDouble(2, amount);
                 stmt.setString(3, creator.toString());
+                stmt.setString(4, currencyType.name());
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 MessageUtil.error("Failed to insert envelope: " + id);
@@ -135,36 +134,32 @@ public class DatabaseManager implements IService {
         });
     }
 
-    /**
-     * Attempt to claim an envelope atomically.
-     * Uses UPDATE with WHERE status='UNUSED' to prevent double-claiming.
-     *
-     * @param id The envelope UUID
-     * @return Optional containing the amount if successfully claimed, empty if already claimed or not found
-     */
-    public CompletableFuture<Optional<Double>> claimEnvelope(UUID id) {
+    /** Atomic claim via UPDATE WHERE status='UNUSED'. */
+    public CompletableFuture<Optional<ClaimResult>> claimEnvelope(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
             String updateSql = "UPDATE envelopes SET status = 'CLAIMED' WHERE uuid = ? AND status = 'UNUSED'";
-            String selectSql = "SELECT amount FROM envelopes WHERE uuid = ?";
+            String selectSql = "SELECT amount, currency_type FROM envelopes WHERE uuid = ?";
 
             try (Connection conn = getConnection()) {
-                // Try to atomically claim the envelope
                 try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
                     updateStmt.setString(1, id.toString());
-                    int rowsAffected = updateStmt.executeUpdate();
-
-                    // If no rows were affected, envelope was already claimed or doesn't exist
-                    if (rowsAffected == 0) {
+                    if (updateStmt.executeUpdate() == 0) {
                         return Optional.empty();
                     }
                 }
 
-                // Successfully claimed, now fetch the amount
                 try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
                     selectStmt.setString(1, id.toString());
                     try (ResultSet rs = selectStmt.executeQuery()) {
                         if (rs.next()) {
-                            return Optional.of(rs.getDouble("amount"));
+                            double amount = rs.getDouble("amount");
+                            String currencyStr = "VAULT";
+                            try {
+                                currencyStr = rs.getString("currency_type");
+                            } catch (SQLException ignored) {
+                            }
+                            LixiCurrency currency = LixiCurrency.valueOf(currencyStr != null ? currencyStr : "VAULT");
+                            return Optional.of(new ClaimResult(amount, currency));
                         }
                     }
                 }
@@ -176,24 +171,27 @@ public class DatabaseManager implements IService {
         });
     }
 
-    /**
-     * Get envelope data by UUID
-     *
-     * @param id The envelope UUID
-     * @return CompletableFuture with envelope data (amount, creator, status)
-     */
+    public record ClaimResult(double amount, LixiCurrency currency) {    }
+
     public CompletableFuture<Optional<EnvelopeData>> getEnvelope(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "SELECT amount, creator_uuid, status FROM envelopes WHERE uuid = ?";
+            String sql = "SELECT amount, creator_uuid, status, currency_type FROM envelopes WHERE uuid = ?";
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, id.toString());
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
+                        String currencyStr = "VAULT";
+                        try {
+                            currencyStr = rs.getString("currency_type");
+                        } catch (SQLException ignored) {
+                        }
+                        LixiCurrency currency = LixiCurrency.valueOf(currencyStr != null ? currencyStr : "VAULT");
                         return Optional.of(new EnvelopeData(
                                 rs.getDouble("amount"),
                                 UUID.fromString(rs.getString("creator_uuid")),
-                                rs.getString("status")
+                                rs.getString("status"),
+                                currency
                         ));
                     }
                 }
@@ -205,9 +203,9 @@ public class DatabaseManager implements IService {
         });
     }
 
-    /**
-     * Data class for envelope information
-     */
-    public record EnvelopeData(double amount, UUID creator, String status) {
+    public record EnvelopeData(double amount, UUID creator, String status, LixiCurrency currency) {
+        public EnvelopeData(double amount, UUID creator, String status) {
+            this(amount, creator, status, LixiCurrency.VAULT);
+        }
     }
 }

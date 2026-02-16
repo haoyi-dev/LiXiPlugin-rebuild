@@ -19,12 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Manages all configuration files for LiXiPlugin.
- * Uses ConfigLib for YAML serialization with kebab-case naming.
- */
 public class ConfigManager {
-    // Holds loaded config instances
     private static final Map<Class<?>, Object> configs = new HashMap<>();
 
     @Getter
@@ -37,8 +32,6 @@ public class ConfigManager {
             MessageConfig.class,
             Lixi.class
     );
-
-    // Holds file paths for each config type
     private final Map<Class<?>, Path> configPaths = new HashMap<>();
 
     private final YamlConfigurationProperties properties = YamlConfigurationProperties.newBuilder()
@@ -52,7 +45,6 @@ public class ConfigManager {
     public ConfigManager(LXPlugin plugin) {
         this.plugin = plugin;
         instance = this;
-        // Prepare paths and load all configs
         initPaths();
         registerAll();
     }
@@ -71,7 +63,6 @@ public class ConfigManager {
         String fileName = getConfigFileName(clazz.getSimpleName()) + ".yml";
 
         if (clazz.isAnnotationPresent(Folder.class)) {
-            // If the class is annotated with @Folder, create a subfolder
             String folderName = clazz.getAnnotation(Folder.class).value();
             File folder = new File(plugin.getDataFolder(), folderName);
             if (!folder.exists()) {
@@ -86,7 +77,6 @@ public class ConfigManager {
     private void registerAll() {
         MessageUtil.info("Loading all configurations");
         for (Class<?> rawClass : configClasses) {
-            // Capture wildcard and process each
             registerConfig((Class<Object>) rawClass);
         }
         MessageUtil.info("All configurations loaded successfully");
@@ -96,18 +86,11 @@ public class ConfigManager {
         Path path = configPaths.get(cfgClass);
 
         YamlConfigurationStore<T> store = new YamlConfigurationStore<>(cfgClass, properties);
-
-        // Update existing config file with any new fields
         store.update(path);
-
-        // Load config
         T loaded = store.load(path);
         configs.put(cfgClass, loaded);
     }
 
-    /**
-     * Reload all configs (e.g. on /lixi admin reload)
-     */
     public void reloadAll() {
         configs.clear();
         MessageUtil.info("Reloading all configurations");
@@ -117,20 +100,11 @@ public class ConfigManager {
         MessageUtil.info("All configurations reloaded successfully");
     }
 
-    /**
-     * Retrieve a loaded configuration instance by its class
-     */
     @SuppressWarnings("unchecked")
     public <T> T getConfig(Class<T> cls) {
         return (T) configs.get(cls);
     }
 
-    /**
-     * Save a configuration instance to disk
-     *
-     * @param cls    The configuration class
-     * @param config The configuration instance to save
-     */
     public <T> void saveConfig(Class<T> cls, T config) {
         Path path = configPaths.get(cls);
         if (path == null) {
@@ -144,9 +118,6 @@ public class ConfigManager {
         MessageUtil.info("Saved configuration: " + cls.getSimpleName());
     }
 
-    /**
-     * Convert class name to kebab-case file name
-     */
     private String getConfigFileName(String name) {
         StringBuilder builder = new StringBuilder(name.length());
         for (int i = 0; i < name.length(); i++) {

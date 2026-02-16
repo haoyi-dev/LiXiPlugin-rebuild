@@ -2,6 +2,7 @@ package me.typical.lixiplugin.commands;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.arguments.StringArgument;
 import io.github.projectunified.uniitem.api.ItemKey;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import me.typical.lixiplugin.LXPlugin;
@@ -13,9 +14,7 @@ import me.typical.lixiplugin.util.MessageUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-/**
- * Handles admin commands using CommandAPI.
- */
+/** Admin commands: setitem, givegoilixi, reload. */
 public class AdminCommandHandler implements IService {
 
     private final LXPlugin plugin = LXPlugin.getInstance();
@@ -28,11 +27,9 @@ public class AdminCommandHandler implements IService {
 
     @Override
     public void shutdown() {
-        // CommandAPI handles unregistration
     }
 
     private void registerCommands() {
-        // Admin command tree - separate from main /lixi command
         new CommandAPICommand("lixiadmin")
                 .withAliases("lxa")
                 .withPermission("lixi.admin")
@@ -45,7 +42,7 @@ public class AdminCommandHandler implements IService {
                     if (sender instanceof Player player) {
                         MessageUtil.send(player, "<gold>=== LiXi Admin Commands ===</gold>");
                         MessageUtil.send(player, "<yellow>/lixiadmin setitem</yellow> <gray>- Set held item as envelope</gray>");
-                        MessageUtil.send(player, "<yellow>/lixiadmin givegoilixi [số lượng]</yellow> <gray>- Give gói lì xì (vật phẩm)</gray>");
+                        MessageUtil.send(player, "<yellow>/lixiadmin givegoilixi <tên> [số lượng]</yellow> <gray>- Give gói lì xì theo tên</gray>");
                         MessageUtil.send(player, "<yellow>/lixiadmin reload</yellow> <gray>- Reload configurations</gray>");
                     } else {
                         sender.sendMessage("=== LiXi Admin Commands ===");
@@ -57,9 +54,6 @@ public class AdminCommandHandler implements IService {
                 .register();
     }
 
-    /**
-     * /lixiadmin setitem - Set the held item as envelope item
-     */
     private CommandAPICommand setItemCommand() {
         return new CommandAPICommand("setitem")
                 .withPermission("lixi.admin")
@@ -71,8 +65,6 @@ public class AdminCommandHandler implements IService {
                         MessageUtil.send(player, messages.withPrefix(messages.getAdminSetItemNoItem()));
                         return;
                     }
-
-                    // Detect item using UniItem API
                     UniItemHook uniItem = plugin.getService(UniItemHook.class);
                     ItemKey itemKey = uniItem.detectItemKey(item);
 
@@ -80,23 +72,15 @@ public class AdminCommandHandler implements IService {
                         MessageUtil.send(player, messages.withPrefix("<red>Could not detect item type! Item may be vanilla or unsupported.</red>"));
                         return;
                     }
-
-                    // Get the plugin type and item ID
                     String pluginType = itemKey.type();
                     String itemId = itemKey.id();
 
                     MessageUtil.send(player, "<gray>Detected: <yellow>" + pluginType + ":" + itemId + "</yellow></gray>");
-
-                    // Update config based on plugin type
                     MainConfig config = plugin.getConfigManager().getConfig(MainConfig.class);
                     MainConfig.EnvelopeConfig envelopeConfig = config.getEnvelope();
-
-                    // Clear all other plugin IDs
                     envelopeConfig.getItemsadder().setItemId("");
                     envelopeConfig.getOraxen().setItemId("");
                     envelopeConfig.getNexo().setItemId("");
-
-                    // Set the appropriate plugin ID
                     switch (pluginType.toLowerCase()) {
                         case "itemsadder" -> {
                             envelopeConfig.getItemsadder().setItemId(itemId);
@@ -116,36 +100,45 @@ public class AdminCommandHandler implements IService {
                             return;
                         }
                     }
-
-                    // Save config to disk
                     plugin.getConfigManager().saveConfig(MainConfig.class, config);
 
                     MessageUtil.send(player, messages.withPrefix(messages.getAdminSetItemSuccess()));
                 });
     }
 
-    /**
-     * /lixiadmin givegoilixi [amount] - Give gói lì xì (item pack), items from lixi.yml
-     */
     private CommandAPICommand giveItemPackCommand() {
         return new CommandAPICommand("givegoilixi")
                 .withAliases("goilixi", "itemphongbao")
                 .withPermission("lixi.admin")
+                .withArguments(
+                        new StringArgument("lixiName").replaceSuggestions((info, builder) -> {
+                            UniItemHook uniItem = plugin.getService(UniItemHook.class);
+                            if (uniItem != null && uniItem.getAllLixiTypes() != null) {
+                                uniItem.getAllLixiTypes().keySet().forEach(builder::suggest);
+                            }
+                            return builder.buildFuture();
+                        })
+                )
                 .withOptionalArguments(new IntegerArgument("amount", 1, 64))
                 .executesPlayer((player, args) -> {
+                    String lixiName = (String) args.get("lixiName");
                     int amount = (Integer) args.getOptional("amount").orElse(1);
                     UniItemHook uniItem = plugin.getService(UniItemHook.class);
-                    ItemStack pack = uniItem.createItemPackEnvelope();
+                    ItemStack pack = uniItem.createItemPackEnvelope(lixiName);
+                    if (pack == null) {
+                        MessageConfig messages = plugin.getConfigManager().getConfig(MessageConfig.class);
+                        MessageUtil.send(player, messages.withPrefix(messages.getAdminLixiNotFound()).replace("%name%", lixiName));
+                        return;
+                    }
                     pack.setAmount(amount);
                     player.getInventory().addItem(pack);
                     MessageConfig messages = plugin.getConfigManager().getConfig(MessageConfig.class);
-                    MessageUtil.send(player, messages.withPrefix(messages.getAdminItemPackGiven()).replace("%amount%", String.valueOf(amount)));
+                    MessageUtil.send(player, messages.withPrefix(messages.getAdminItemPackGiven())
+                            .replace("%amount%", String.valueOf(amount))
+                            .replace("%name%", lixiName));
                 });
     }
 
-    /**
-     * /lixiadmin reload - Reload configurations
-     */
     private CommandAPICommand reloadCommand() {
         return new CommandAPICommand("reload")
                 .withPermission("lixi.admin")

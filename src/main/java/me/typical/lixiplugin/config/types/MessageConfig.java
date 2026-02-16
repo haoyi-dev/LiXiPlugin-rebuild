@@ -4,10 +4,6 @@ import de.exlll.configlib.Comment;
 import de.exlll.configlib.Configuration;
 import lombok.Getter;
 
-/**
- * Message configuration for LiXiPlugin.
- * All messages support MiniMessage formatting and placeholders.
- */
 @Configuration
 @Getter
 public class MessageConfig {
@@ -15,7 +11,6 @@ public class MessageConfig {
     @Comment("Prefix used in all plugin messages")
     private String prefix = "<gradient:#ff0000:#ffaa00>[Lì Xì]</gradient> <gray>»</gray> ";
 
-    // Chat Lixi Messages
     @Comment({
             "Broadcast message when a chat lixi is created",
             "Placeholders: %player%, %amount%, %limit%"
@@ -45,7 +40,6 @@ public class MessageConfig {
     })
     private String chatLixiRefund = "<prefix><yellow>Lì xì của bạn đã hết hạn. Hoàn lại</yellow> <gold>%amount%</gold>";
 
-    // Direct Transfer Messages
     @Comment({
             "Message sent to sender when transferring money",
             "Placeholders: %player%, %amount%"
@@ -58,7 +52,6 @@ public class MessageConfig {
     })
     private String transferReceived = "<prefix><green>Bạn đã nhận</green> <gold>%amount%</gold> <green>từ</green> <gold>%player%</gold><green>!</green>";
 
-    // Envelope Messages
     @Comment({
             "Message when successfully creating a physical envelope",
             "Placeholders: %amount%"
@@ -77,20 +70,21 @@ public class MessageConfig {
     @Comment("Message when player claims gói lì xì (item pack) and receives items")
     private String envelopeItemPackClaimed = "<prefix><green>Bạn đã mở gói lì xì và nhận được vật phẩm!</green>";
 
-    // Admin Messages
     @Comment("Message when successfully setting the envelope item")
     private String adminSetItemSuccess = "<prefix><green>Đã đặt vật phẩm lì xì thành công!</green>";
 
     @Comment("Message when admin must hold an item to set it")
     private String adminSetItemNoItem = "<prefix><red>Bạn phải cầm một vật phẩm trong tay!</red>";
 
-    @Comment("Message when admin receives gói lì xì (item pack). Placeholder: %amount%")
-    private String adminItemPackGiven = "<prefix><green>Đã nhận</green> <gold>%amount%</gold> <green>gói lì xì (vật phẩm)!</green>";
+    @Comment("Message when admin receives gói lì xì. Placeholders: %amount%, %name%")
+    private String adminItemPackGiven = "<prefix><green>Đã nhận</green> <gold>%amount%</gold> <green>gói lì xì</green> <gold>%name%</gold><green>!</green>";
+
+    @Comment("Message when lì xì type not found. Placeholder: %name%")
+    private String adminLixiNotFound = "<prefix><red>Không tìm thấy loại lì xì</red> <gold>%name%</gold><red>!</red>";
 
     @Comment("Message when config is reloaded successfully")
     private String adminReloadSuccess = "<prefix><green>Đã tải lại cấu hình thành công!</green>";
 
-    // Error Messages
     @Comment({
             "Message when player doesn't have enough money",
             "Placeholders: %required%, %balance%"
@@ -121,9 +115,9 @@ public class MessageConfig {
     @Comment("Message when Vault economy is not available")
     private String vaultNotAvailable = "<prefix><red>Hệ thống kinh tế không khả dụng!</red>";
 
-    /**
-     * Get a message with the prefix applied
-     */
+    @Comment("Message when PlayerPoints is not available")
+    private String pointsNotAvailable = "<prefix><red>PlayerPoints chưa được cài đặt hoặc không khả dụng!</red>";
+
     public String withPrefix(String message) {
         return message.replace("<prefix>", prefix);
     }

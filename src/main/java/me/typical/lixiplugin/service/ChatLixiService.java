@@ -3,10 +3,10 @@ package me.typical.lixiplugin.service;
 import me.typical.lixiplugin.LXPlugin;
 import me.typical.lixiplugin.config.types.MainConfig;
 import me.typical.lixiplugin.config.types.MessageConfig;
-import me.typical.lixiplugin.hook.VaultHook;
+import me.typical.lixiplugin.economy.EconomyProvider;
+import me.typical.lixiplugin.economy.LixiCurrency;
 import me.typical.lixiplugin.util.EffectUtil;
 import me.typical.lixiplugin.util.MessageUtil;
-import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
@@ -15,10 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Manages chat lixi broadcasts.
- * Players create sessions that others can claim from via chat click events.
- */
+/** Chat lixi broadcasts: players create sessions, others claim via click. */
 public class ChatLixiService implements IService {
 
     private final LXPlugin plugin = LXPlugin.getInstance();
@@ -31,38 +28,35 @@ public class ChatLixiService implements IService {
 
     @Override
     public void shutdown() {
-        // Cancel all active sessions
         activeSessions.clear();
     }
 
-    /**
-     * Create a new chat lixi session
-     *
-     * @param creator The player creating the lixi
-     * @param amount  The total amount to distribute
-     * @param limit   The number of people who can claim
-     * @return true if successful, false otherwise
-     */
-    public boolean createSession(Player creator, double amount, int limit) {
-        VaultHook vault = plugin.getService(VaultHook.class);
+    public boolean createSession(Player creator, double amount, int limit, LixiCurrency currencyType) {
+        EconomyProvider provider = plugin.getEconomyProvider(currencyType);
+        if (provider == null || !provider.isAvailable()) {
+            MessageConfig messages = plugin.getConfigManager().getConfig(MessageConfig.class);
+            MessageUtil.send(creator, messages.withPrefix(currencyType == LixiCurrency.POINTS
+                    ? messages.getPointsNotAvailable() : messages.getVaultNotAvailable()));
+            return false;
+        }
+
         MessageConfig messages = plugin.getConfigManager().getConfig(MessageConfig.class);
-        MainConfig.ChatLixiConfig config = plugin.getConfigManager()
-                .getConfig(MainConfig.class)
-                .getChatLixi();
+        MainConfig.ChatLixiConfig config = plugin.getConfigManager().getConfig(MainConfig.class).getChatLixi();
 
-        // Validate amount
-        if (amount < config.getMinAmount()) {
+        double minAmount = currencyType == LixiCurrency.POINTS ? config.getMinPoints() : config.getMinAmount();
+        double maxAmount = currencyType == LixiCurrency.POINTS ? config.getMaxPoints() : config.getMaxAmount();
+
+        if (amount < minAmount) {
             MessageUtil.send(creator, messages.withPrefix(messages.getAmountTooLow())
-                    .replace("%min%", vault.format(config.getMinAmount())));
+                    .replace("%min%", provider.format(minAmount)));
             return false;
         }
-        if (amount > config.getMaxAmount()) {
+        if (amount > maxAmount) {
             MessageUtil.send(creator, messages.withPrefix(messages.getAmountTooHigh())
-                    .replace("%max%", vault.format(config.getMaxAmount())));
+                    .replace("%max%", provider.format(maxAmount)));
             return false;
         }
 
-        // Validate limit
         if (limit < config.getMinLimit()) {
             MessageUtil.send(creator, messages.withPrefix(messages.getLimitTooLow())
                     .replace("%min%", String.valueOf(config.getMinLimit())));
@@ -74,158 +68,129 @@ public class ChatLixiService implements IService {
             return false;
         }
 
-        // Check balance
-        double balance = vault.getBalance(creator);
+        double balance = provider.getBalance(creator);
         if (balance < amount) {
             MessageUtil.send(creator, messages.withPrefix(messages.getInsufficientBalance())
-                    .replace("%required%", vault.format(amount))
-                    .replace("%balance%", vault.format(balance)));
+                    .replace("%required%", provider.format(amount))
+                    .replace("%balance%", provider.format(balance)));
             return false;
         }
 
-        // Withdraw money
-        EconomyResponse response = vault.withdraw(creator, amount);
-        if (!response.transactionSuccess()) {
+        if (!provider.withdraw(creator, amount)) {
             MessageUtil.send(creator, messages.withPrefix(messages.getGenericError()));
             return false;
         }
 
-        // Create session
         UUID sessionId = UUID.randomUUID();
         ChatLixiSession session = new ChatLixiSession(
                 sessionId,
                 creator.getUniqueId(),
                 creator.getName(),
                 amount,
-                limit
+                limit,
+                currencyType
         );
         activeSessions.put(sessionId, session);
 
-        // Broadcast message
         String broadcast = messages.withPrefix(messages.getChatLixiBroadcast())
                 .replace("%player%", creator.getName())
-                .replace("%amount%", vault.format(amount))
+                .replace("%amount%", provider.format(amount))
                 .replace("%limit%", String.valueOf(limit))
                 .replace("%session_id%", sessionId.toString());
         MessageUtil.broadcast(broadcast);
 
-        // Schedule expiry
-        plugin.getFoliaLib().getScheduler().runLater(() -> {
-            expireSession(sessionId);
-        }, config.getExpirySeconds() * 20L); // Convert seconds to ticks
-
+        plugin.getFoliaLib().getScheduler().runLater(() -> expireSession(sessionId), config.getExpirySeconds() * 20L);
         return true;
     }
 
-    /**
-     * Attempt to claim from a chat lixi session
-     *
-     * @param claimer   The player attempting to claim
-     * @param sessionId The session UUID
-     */
     public void claimSession(Player claimer, UUID sessionId) {
         MessageConfig messages = plugin.getConfigManager().getConfig(MessageConfig.class);
-        VaultHook vault = plugin.getService(VaultHook.class);
 
         ChatLixiSession session = activeSessions.get(sessionId);
-
-        // Check if session exists
         if (session == null) {
             MessageUtil.send(claimer, messages.withPrefix(messages.getChatLixiExpired()));
             return;
         }
-
-        // Check if already claimed
         if (session.claimedBy.contains(claimer.getUniqueId())) {
             MessageUtil.send(claimer, messages.withPrefix(messages.getChatLixiAlreadyClaimed()));
             return;
         }
-
-        // Check if slots available
         if (session.remainingSlots <= 0) {
             MessageUtil.send(claimer, messages.withPrefix(messages.getChatLixiNoSlots()));
             return;
         }
-
-        // Calculate amount using Double Average algorithm
+        // Double Average: last gets remainder; else random in (0.01, 2*avg)
         double claimAmount;
         if (session.remainingSlots == 1) {
-            // Last person gets all remaining
             claimAmount = session.remainingAmount;
         } else {
-            // Random amount between 0.01 and (remaining / remainingSlots) * 2
             double maxAmount = (session.remainingAmount / session.remainingSlots) * 2;
             claimAmount = ThreadLocalRandom.current().nextDouble(0.01, Math.max(0.02, maxAmount));
             claimAmount = Math.min(claimAmount, session.remainingAmount);
         }
 
-        // Update session
         session.remainingAmount -= claimAmount;
         session.remainingSlots--;
         session.claimedBy.add(claimer.getUniqueId());
 
-        // Deposit money
-        vault.deposit(claimer, claimAmount);
+        EconomyProvider provider = plugin.getEconomyProvider(session.currencyType);
+        if (provider == null || !provider.isAvailable()) {
+            MessageUtil.send(claimer, messages.withPrefix(messages.getGenericError()));
+            return;
+        }
+        provider.deposit(claimer, claimAmount);
 
-        // Send success message
         MessageUtil.send(claimer, messages.withPrefix(messages.getChatLixiClaimSuccess())
-                .replace("%amount%", vault.format(claimAmount)));
-
-        // Play effects
+                .replace("%amount%", provider.format(claimAmount)));
         plugin.getFoliaLib().getScheduler().runAtEntity(claimer, task -> {
             EffectUtil.playLixiEffect(claimer);
         });
-
-        // Remove session if all slots claimed
         if (session.remainingSlots == 0) {
             activeSessions.remove(sessionId);
         }
     }
 
-    /**
-     * Expire a session and refund remaining amount to creator
-     */
     private void expireSession(UUID sessionId) {
         ChatLixiSession session = activeSessions.remove(sessionId);
         if (session == null || session.remainingAmount <= 0) {
             return;
         }
 
-        // Refund remaining to creator
-        VaultHook vault = plugin.getService(VaultHook.class);
+        EconomyProvider provider = plugin.getEconomyProvider(session.currencyType);
+        if (provider == null || !provider.isAvailable()) {
+            return;
+        }
         MessageConfig messages = plugin.getConfigManager().getConfig(MessageConfig.class);
 
         Player creator = plugin.getServer().getPlayer(session.creatorUuid);
         if (creator != null && creator.isOnline()) {
-            vault.deposit(creator, session.remainingAmount);
+            provider.deposit(creator, session.remainingAmount);
             MessageUtil.send(creator, messages.withPrefix(messages.getChatLixiRefund())
-                    .replace("%amount%", vault.format(session.remainingAmount)));
+                    .replace("%amount%", provider.format(session.remainingAmount)));
         } else {
-            // Creator offline, deposit to offline player
-            vault.deposit(plugin.getServer().getOfflinePlayer(session.creatorUuid), session.remainingAmount);
+            provider.deposit(plugin.getServer().getOfflinePlayer(session.creatorUuid), session.remainingAmount);
         }
     }
 
-    /**
-     * Data class for a chat lixi session
-     */
     private static class ChatLixiSession {
         final UUID sessionId;
         final UUID creatorUuid;
         final String creatorName;
         final double totalAmount;
         final int totalSlots;
+        final LixiCurrency currencyType;
         double remainingAmount;
         int remainingSlots;
         final Set<UUID> claimedBy;
         final long createdAt;
 
-        ChatLixiSession(UUID sessionId, UUID creatorUuid, String creatorName, double amount, int slots) {
+        ChatLixiSession(UUID sessionId, UUID creatorUuid, String creatorName, double amount, int slots, LixiCurrency currencyType) {
             this.sessionId = sessionId;
             this.creatorUuid = creatorUuid;
             this.creatorName = creatorName;
             this.totalAmount = amount;
             this.totalSlots = slots;
+            this.currencyType = currencyType != null ? currencyType : LixiCurrency.VAULT;
             this.remainingAmount = amount;
             this.remainingSlots = slots;
             this.claimedBy = ConcurrentHashMap.newKeySet();

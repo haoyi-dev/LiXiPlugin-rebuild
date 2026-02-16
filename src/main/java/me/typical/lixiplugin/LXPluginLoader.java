@@ -18,7 +18,6 @@ public class LXPluginLoader implements PluginLoader {
         resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:invui:pom:1.49"), null));
         resolver.addDependency(new Dependency(new DefaultArtifact("com.zaxxer:HikariCP:6.2.1"), null));
         resolver.addDependency(new Dependency(new DefaultArtifact("org.mariadb.jdbc:mariadb-java-client:3.5.3"), null));
-        // CommandAPI is shaded into the plugin JAR
         resolver.addDependency(new Dependency(new DefaultArtifact("org.xerial:sqlite-jdbc:3.51.2.0"), null));
         classpathBuilder.addLibrary(resolver);
     }
